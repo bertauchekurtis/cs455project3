@@ -126,30 +126,28 @@ def getMetropolisWeightsOfij(nodePositions, i, j):
         return 0
 
 def createPlots(measurements, maxNode, minNode, case, baseFilename):
-    plotError(measurements, case, baseFilename)
+    plotErrorConvergence(measurements, case, baseFilename)
     plotFinalInital(measurements, case, baseFilename)
     plotMSEConverg(measurements, case, baseFilename)
-    plotMostNeighborsError(measurements, maxNode, case, baseFilename)
-    plotMostNeighborsSquareError(measurements, maxNode, case, baseFilename)
-    plotMinNeighborsError(measurements, minNode, case, baseFilename)
-    plotMinNeighborsSquareError(measurements, minNode, case, baseFilename)
+    plotMostMinNeighborsError(measurements, maxNode, minNode, case, baseFilename)
+    plotMostMinNeighborsSquareError(measurements, maxNode, minNode, case, baseFilename)
 
-def plotError(measurements, case, baseFileName):
+def plotErrorConvergence(measurements, case, baseFileName):
     plt.clf()
     for i in range(NUM_NODES):
         plt.plot(GROUND_TRUTH - measurements[i, :])
-    plt.title("Raw Error\n" + case)
+    plt.title("Error Convergence\n" + case)
     plt.xlabel("Iteration")
     plt.ylabel("Raw Error")
-    plt.savefig(baseFileName + "/" + baseFileName + "_rawError.png")
+    plt.savefig(baseFileName + "/" + baseFileName + "_ConvergenceError.png")
 
 def plotFinalInital(measurements, case, baseFileName):
     plt.clf()
     plt.title("Initial and Final States\n" + case)
     plt.xlabel("Node")
     plt.ylabel("Measurment Value")
-    plt.plot(measurements[:, 0], color = "red", marker = "s", label = "Initial Measurement")
-    plt.plot(measurements[:, measurements.shape[1] - 1], color = "blue", marker = "s", label = "Final Measurement")
+    plt.plot(measurements[:, 0], color = "red", marker = "o", label = "Initial Measurement")
+    plt.plot(measurements[:, measurements.shape[1] - 1], color = "blue", marker = "o", label = "Final Measurement")
     plt.legend(loc = "upper left")
     plt.savefig(baseFileName + "/" + baseFileName + "_finalInitial.png")
 
@@ -162,37 +160,26 @@ def plotMSEConverg(measurements, case, baseFileName):
         plt.plot((GROUND_TRUTH - measurements[i, :])**2)
     plt.savefig(baseFileName + "/" + baseFileName + "_meanSquareConergenve.png")
 
-def plotMostNeighborsError(measurements, maxNode, case, baseFileName):
+def plotMostMinNeighborsError(measurements, maxNode, minNode, case, baseFileName):
     plt.clf()
-    plt.title("Most Neighbors Error\n" + case)
+    plt.title("Max and Min Neighbor Error Convergence\n" + case)
     plt.xlabel("Error")
     plt.ylabel("Iteration")
-    plt.plot(GROUND_TRUTH - measurements[maxNode, :])
-    plt.savefig(baseFileName + "/" + baseFileName + "_maxNeighborsError")
+    plt.plot(GROUND_TRUTH - measurements[maxNode, :], label = "Max Neighbors")
+    plt.plot(GROUND_TRUTH - measurements[minNode, :], label = "Min Neighbors")
+    plt.legend(loc = "upper right")
+    plt.savefig(baseFileName + "/" + baseFileName + "_maxMinNeighborsErrorConvergence")
 
-def plotMostNeighborsSquareError(measurements, maxNode, case, baseFileName):
+def plotMostMinNeighborsSquareError(measurements, maxNode, minNode, case, baseFileName):
     plt.clf()
-    plt.title("Most Neighbors Square Error\n" + case)
+    plt.title("Max and Min Neighbor Mean Square Error Convergence\n" + case)
     plt.xlabel("Error")
     plt.ylabel("Iteration")
-    plt.plot((GROUND_TRUTH - measurements[maxNode, :])**2)
-    plt.savefig(baseFileName + "/" + baseFileName + "_maxNeighborsSquareError")
+    plt.plot((GROUND_TRUTH - measurements[maxNode, :])**2, label = "Max Neighbors")
+    plt.plot((GROUND_TRUTH - measurements[minNode, :])**2, label = "Min Neighbors")
+    plt.legend(loc = "upper right")
+    plt.savefig(baseFileName + "/" + baseFileName + "_maxMinNeighborsMSEConvergence")
 
-def plotMinNeighborsError(measurements, minNode, case, baseFileName):
-    plt.clf()
-    plt.title("Least Neighbors Error\n" + case)
-    plt.xlabel("Error")
-    plt.ylabel("Iteration")
-    plt.plot(GROUND_TRUTH - measurements[minNode, :])
-    plt.savefig(baseFileName + "/" + baseFileName + "_minNeighborsError")
-
-def plotMinNeighborsSquareError(measurements, minNode, case, baseFileName):
-    plt.clf()
-    plt.title("Least Neighbors Square Error\n" + case)
-    plt.xlabel("Error")
-    plt.ylabel("Iteration")
-    plt.plot((GROUND_TRUTH - measurements[minNode, :])**2)
-    plt.savefig(baseFileName + "/" + baseFileName + "_minNeighborsSquareError")
 
 def main():
 
@@ -216,9 +203,9 @@ def main():
 
     # setup initial states
     measures = GROUND_TRUTH + np.random.uniform(size=(NUM_NODES, 1), high=VARIANCE, low=-VARIANCE)
-    nodePositions = np.random.randint(low = 0, high = 70, size = (DIMENSIONS, NUM_NODES))
+    nodePositions = np.random.randint(low = 0, high = 50, size = (DIMENSIONS, NUM_NODES))
     allMeasures = measures.copy()
-    plotNodesAndSave(nodePositions, "test.png")
+    plotNodesAndSave(nodePositions, "network.png")
 
     # get the node with min and max neighbors
     minNeighborsNode = -1
@@ -240,7 +227,7 @@ def main():
     #################################
 
     print("=" * 20, " BEGINNING STATIC MAX DEGREE SIMULATION ", "=" * 20)
-    for i in range(200):
+    for i in range(500):
         measures = updateMeasurements(measures, nodePositions, "maxdegree")
         allMeasures = np.concatenate((allMeasures, measures.copy()), axis = 1)
         print("| COMPLETED ITERATION: ", i, " " * 53, "|")
@@ -253,7 +240,6 @@ def main():
     #################################
 
     measures = GROUND_TRUTH + np.random.uniform(size=(NUM_NODES, 1), high=VARIANCE, low=-VARIANCE)
-    nodePositions = np.random.randint(low = 0, high = 70, size = (DIMENSIONS, NUM_NODES))
     allMeasures = measures.copy()
     print("=" * 20, " BEGINNING STATIC METROPOLIS SIMULATION ", "=" * 20)
     for i in range(200):
@@ -268,9 +254,11 @@ def main():
     # CASE THREE DYANMIC - MAX DEGREE
     #################################
     global R
+    measures = GROUND_TRUTH + np.random.uniform(size=(NUM_NODES, 1), high=VARIANCE, low=-VARIANCE)
+    allMeasures = measures.copy()
     print("=" * 20, " BEGINNING DYNAMIC MAX DEGREE SIMULATION ", "=" * 20)
-    for i in range(200):
-        R = R - np.random.uniform(-1, 1)
+    for i in range(500):
+        R = R - np.random.uniform(-0.5, 0.5)
         measures = updateMeasurements(measures, nodePositions, "maxdegree")
         allMeasures = np.concatenate((allMeasures, measures.copy()), axis = 1)
         print("| COMPLETED ITERATION: ", i, " " * 53, "|")
@@ -283,11 +271,10 @@ def main():
     #################################
     R = 15
     measures = GROUND_TRUTH + np.random.uniform(size=(NUM_NODES, 1), high=VARIANCE, low=-VARIANCE)
-    nodePositions = np.random.randint(low = 0, high = 70, size = (DIMENSIONS, NUM_NODES))
     allMeasures = measures.copy()
     print("=" * 20, " BEGINNING DYNAMIC METROPOLIS SIMULATION ", "=" * 20)
     for i in range(200):
-        R = R - np.random.uniform(-1, 1)
+        R = R - np.random.uniform(-0.5, 0.5)
         measures = updateMeasurements(measures, nodePositions, "metropolis")
         allMeasures = np.concatenate((allMeasures, measures.copy()), axis = 1)
         print("| COMPLETED ITERATION: ", i, " " * 53, "|")
